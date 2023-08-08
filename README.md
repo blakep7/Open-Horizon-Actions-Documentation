@@ -1,7 +1,7 @@
 # [Open-Horizon-Actions-Documentation](Github_Actions_Workflow_Documentation.pdf)
 # [Overleaf Project View](https://www.overleaf.com/read/smzhpbxbzpcb)
 ----------------------------
-# Introduction {#introduction .unnumbered}
+# Introduction
 
 Within this documentation, you'll find a thorough guide to the CI/CD
 GitHub Actions workflows employed across the Open Horizon repositories.
@@ -33,7 +33,7 @@ transition from development to production without manual intervention.
 
 ### Triggers
 
-This workflow is triggered by the following\...
+This workflow is triggered by the following...
 
 -   Push or Merge to the following branches of Anax
 
@@ -45,7 +45,7 @@ This workflow is triggered by the following\...
 
 ### Variables and Secrets
 
-The workflow needs access to the following variables and secrets\...
+The workflow needs access to the following variables and secrets...
 
 -   Repository Level [^1]
 
@@ -79,7 +79,7 @@ The workflow needs access to the following variables and secrets\...
 
 ### Conventions
 
-This workflow will follow the following conventions\...
+This workflow will follow the following conventions...
 
 -   Naming Conventions
 
@@ -134,7 +134,7 @@ This workflow will follow the following conventions\...
 
 ### Produced Artifacts
 
-This workflow produces the following artifacts\...
+This workflow produces the following artifacts...
 
 -   Docker Images
 
@@ -154,7 +154,7 @@ This workflow produces the following artifacts\...
 
     -   `amd64_anax_rpm`
 
-    -   `amd64_anax_macpkg`\
+    -   `amd64_anax_macpkg`
 
     -   `arm64_anax`
 
@@ -166,7 +166,7 @@ This workflow produces the following artifacts\...
 
     -   `arm64_anax_debian`
 
-    -   `arm64_anax_macpkg`\
+    -   `arm64_anax_macpkg`
 
     -   `ppc64el_anax`
 
@@ -178,9 +178,9 @@ This workflow produces the following artifacts\...
 
     -   `ppc64el_anax_debian`
 
-    -   `ppc64el_anax_rpm`\
+    -   `ppc64el_anax_rpm`
 
-    -   `armhf_anax_debian`\
+    -   `armhf_anax_debian`
 
     -   `s390x_anax`
 
@@ -196,7 +196,7 @@ This workflow produces the following artifacts\...
 
 -   GitHub Actions Artifacts (expires 90 days after upload)
 
-    -   `anax-agent-files-v<VERSION>`\
+    -   `anax-agent-files-v<VERSION>`
 
     -   `anax-linux-amd64_agbot-image-v<VERSION>`
 
@@ -214,7 +214,7 @@ This workflow produces the following artifacts\...
 
     -   `anax-linux-amd64-rpm-package-v<VERSION>`
 
-    -   `anax-mac-amd64-mac-package-v<VERSION>`\
+    -   `anax-mac-amd64-mac-package-v<VERSION>`
 
     -   `anax-linux-arm64_anax-image-v<VERSION>`
 
@@ -224,9 +224,9 @@ This workflow produces the following artifacts\...
 
     -   `anax-linux-arm64_edge-sync-service-v<VERSION>`
 
-    -   `anax-linux-arm64-deb-package-v<VERSION>`\
+    -   `anax-linux-arm64-deb-package-v<VERSION>`
 
-    -   `anax-linux-armhf-deb-package-v<VERSION>`\
+    -   `anax-linux-armhf-deb-package-v<VERSION>`
 
     -   `anax-linux-ppc64el_anax-image-v<VERSION>`
 
@@ -238,7 +238,7 @@ This workflow produces the following artifacts\...
 
     -   `anax-linux-ppc64el-deb-package-v<VERSION>`
 
-    -   `anax-linux-ppc64el-rpm-package-v<VERSION>`\
+    -   `anax-linux-ppc64el-rpm-package-v<VERSION>`
 
     -   `anax-linux-s390x_anax-image-v<VERSION>`
 
@@ -254,7 +254,7 @@ This workflow produces the following artifacts\...
 
 ### Dependencies
 
-This workflow has the following dependencies\...
+This workflow has the following dependencies...
 
 -   Internal Dependencies [^2]
 
@@ -272,41 +272,41 @@ This workflow has the following dependencies\...
 
     -   External Actions
 
-        -   `actions/checkout@v3`\
+        -   `actions/checkout@v3`
             Author: GitHub\
             Link: <https://github.com/actions/checkout>\
             Use: To checkout our repository into the hosted runner.
 
-        -   `actions/upload-artifact@v3`\
+        -   `actions/upload-artifact@v3`
             Author: GitHub\
             Link: <https://github.com/actions/upload-artifact>\
             Use: To upload artifacts to GitHub actions artifacts
 
-        -   `docker/setup-qemu-action@v2`\
+        -   `docker/setup-qemu-action@v2`
             Author: Docker\
             Link: <https://github.com/docker/setup-qemu-action>\
             Use: Setup QEMU for Docker image building cross
             architecture.
 
-        -   `docker/setup-buildx-action@v2`\
+        -   `docker/setup-buildx-action@v2`
             Author: Docker\
             Link: <https://github.com/docker/setup-buildx-action>\
             Use: Setup BuildX for Docker image building cross
             architecture.
 
-        -   `docker/login-action@v2`\
+        -   `docker/login-action@v2`
             Author: Docker\
             Link: <https://github.com/docker/login-action>\
             Use: Login to Dockerhub and GitHub Container Registry for
             image push. (Can be replaced with a run docker login
             command)
 
-        -   `actions/setup-go@v3`\
+        -   `actions/setup-go@v3`
             Author: GitHub\
             Link: <https://github.com/actions/setup-go>\
             Use: Set up GoLang within our runner environment
 
-        -   `uraimo/run-on-arch-action@v2`\
+        -   `uraimo/run-on-arch-action@v2`
             Author: Uraimo and Contributors\
             Link: <https://github.com/uraimo/run-on-arch-action>\
             Use: Set up Docker containers to execute build commands on
@@ -315,7 +315,7 @@ This workflow has the following dependencies\...
             architecture as a runner and the packaging tool doesn't
             support cross-architecture.
 
-        -   `actions/download-artifact@v3`\
+        -   `actions/download-artifact@v3`
             Author: GitHub\
             Link: <https://github.com/actions/upload-artifact>\
             Use: Get artifacts that were uploaded previously.
@@ -362,7 +362,7 @@ Finally, a GitHub release page is generated.
 
 ### Triggers
 
-This workflow is triggered by the following\...
+This workflow is triggered by the following...
 
 -   Workflow Dispatch
 
@@ -372,7 +372,7 @@ This workflow is triggered by the following\...
 
 ### Inputs
 
-This workflow has the following inputs\...
+This workflow has the following inputs...
 
 -   `AGBOT_VERSION` - String - The version of the Agbot image and
     packages.
@@ -428,7 +428,7 @@ This workflow creates a GitHub Release with the following configuration.
 
 ### Variables and Secrets
 
-The workflow needs access to the following variables and secrets\...
+The workflow needs access to the following variables and secrets...
 
 -   Repository Level [^5]
 
@@ -446,7 +446,7 @@ The workflow needs access to the following variables and secrets\...
 
 ### Conventions
 
-This workflow will follow the following conventions\...
+This workflow will follow the following conventions...
 
 -   Naming Conventions
 
@@ -509,9 +509,9 @@ Horizon's Dockerhub registry and GitHub's container registry.
 
 ### Triggers
 
-This workflow is triggered by the following\...
+This workflow is triggered by the following...
 
--   Push or Merge to the following branches of Exchange API\...
+-   Push or Merge to the following branches of Exchange API...
 
     -   `master`
 
@@ -521,7 +521,7 @@ This workflow is triggered by the following\...
 
 ### Variables and Secrets
 
-The workflow needs access to the following variables and secrets\...
+The workflow needs access to the following variables and secrets...
 
 -   Repository Level [^6]
 
@@ -539,7 +539,7 @@ The workflow needs access to the following variables and secrets\...
 
 ### Conventions
 
-This workflow will follow the following conventions\...
+This workflow will follow the following conventions...
 
 -   Naming Conventions
 
@@ -553,7 +553,7 @@ This workflow will follow the following conventions\...
 
 ### Produced Artifacts
 
-This workflow produces the following artifacts\...
+This workflow produces the following artifacts...
 
 -   Docker Images
 
@@ -561,25 +561,25 @@ This workflow produces the following artifacts\...
 
 ### Dependencies
 
-This workflow has the following dependencies\...
+This workflow has the following dependencies...
 
 -   External Dependencies
 
     -   External Actions
 
-        -   `actions/checkout@v3`\
+        -   `actions/checkout@v3`
             Author: GitHub\
             Link: <https://github.com/actions/checkout>\
             Use: To checkout our repository into the hosted runner.
 
-        -   `docker/login-action@v2`\
+        -   `docker/login-action@v2`
             Author: Docker\
             Link: <https://github.com/docker/login-action>\
             Use: Login to Dockerhub and GitHub Container Registry for
             image push. (Can be replaced with a run docker login
             command)
 
-        -   `coursier/setup-action@v1`\
+        -   `coursier/setup-action@v1`
             Author: Coursier\
             Link: <https://github.com/coursier/setup-action>\
             Use: A GitHub Action to install Coursier and use it to
@@ -608,7 +608,7 @@ registry.
 
 ### Triggers
 
-This workflow is triggered by the following\...
+This workflow is triggered by the following...
 
 -   Push or Merge to the following branches of FDO-Support
 
@@ -616,7 +616,7 @@ This workflow is triggered by the following\...
 
 ### Variables and Secrets
 
-The workflow needs access to the following variables and secrets\...
+The workflow needs access to the following variables and secrets...
 
 -   Repository Level [^7]
 
@@ -637,7 +637,7 @@ The workflow needs access to the following variables and secrets\...
 
 ### Conventions
 
-This workflow will follow the following conventions\...
+This workflow will follow the following conventions...
 
 -   Naming Conventions
 
@@ -651,7 +651,7 @@ This workflow will follow the following conventions\...
 
 ### Produced Artifacts
 
-This workflow produces the following artifacts\...
+This workflow produces the following artifacts...
 
 -   Docker Images
 
@@ -659,25 +659,25 @@ This workflow produces the following artifacts\...
 
 ### Dependencies
 
-This workflow has the following dependencies\...
+This workflow has the following dependencies...
 
 -   External Dependencies
 
     -   External Actions
 
-        -   `actions/checkout@v3`\
+        -   `actions/checkout@v3`
             Author: GitHub\
             Link: <https://github.com/actions/checkout>\
             Use: To checkout our repository into the hosted runner.
 
-        -   `docker/login-action@v2`\
+        -   `docker/login-action@v2`
             Author: Docker\
             Link: <https://github.com/docker/login-action>\
             Use: Login to Dockerhub and GitHub Container Registry for
             image push. (Can be replaced with a run docker login
             command)
 
-        -   `actions/setup-go@v2`\
+        -   `actions/setup-go@v2`
             Author: GitHub\
             Link: <https://github.com/actions/setup-go>\
             Use: Set up GoLang within our runner environment
@@ -705,7 +705,7 @@ registry.
 
 ### Triggers
 
-This workflow is triggered by the following\...
+This workflow is triggered by the following...
 
 -   Push or Merge to the following branches of Vault
 
@@ -713,7 +713,7 @@ This workflow is triggered by the following\...
 
 ### Variables and Secrets
 
-The workflow needs access to the following variables and secrets\...
+The workflow needs access to the following variables and secrets...
 
 -   Repository Level [^8]
 
@@ -734,7 +734,7 @@ The workflow needs access to the following variables and secrets\...
 
 ### Conventions
 
-This workflow will follow the following conventions\...
+This workflow will follow the following conventions...
 
 -   Naming Conventions
 
@@ -748,7 +748,7 @@ This workflow will follow the following conventions\...
 
 ### Produced Artifacts
 
-This workflow produces the following artifacts\...
+This workflow produces the following artifacts...
 
 -   Docker Images
 
@@ -756,25 +756,25 @@ This workflow produces the following artifacts\...
 
 ### Dependencies
 
-This workflow has the following dependencies\...
+This workflow has the following dependencies...
 
 -   External Dependencies
 
     -   External Actions
 
-        -   `actions/checkout@v3`\
+        -   `actions/checkout@v3`
             Author: GitHub\
             Link: <https://github.com/actions/checkout>\
             Use: To checkout our repository into the hosted runner.
 
-        -   `docker/login-action@v2`\
+        -   `docker/login-action@v2`
             Author: Docker\
             Link: <https://github.com/docker/login-action>\
             Use: Login to Dockerhub and GitHub Container Registry for
             image push. (Can be replaced with a run docker login
             command)
 
-        -   `actions/setup-go@v2`\
+        -   `actions/setup-go@v2`
             Author: GitHub\
             Link: <https://github.com/actions/setup-go>\
             Use: Set up GoLang within our runner environment
@@ -803,7 +803,7 @@ generates the examples release with said file.
 
 ### Triggers
 
-This workflow is triggered by the following\...
+This workflow is triggered by the following...
 
 -   Workflow Dispatch
 
@@ -813,7 +813,7 @@ This workflow is triggered by the following\...
 
 ### Inputs
 
-This workflow has the following inputs\...
+This workflow has the following inputs...
 
 -   `versionFileJSON` - String - The file containing all the versions
     (example below)
@@ -852,7 +852,7 @@ The workflow needs access to no variables or secrets.
 
 ### Conventions
 
-This workflow will follow the following conventions\...
+This workflow will follow the following conventions...
 
 -   Release Creation
 
@@ -884,7 +884,7 @@ links to the component releases within their specific repositories.\"
 
 ### Triggers
 
-This workflow is triggered by the following\...
+This workflow is triggered by the following...
 
 -   Workflow Dispatch
 
@@ -894,7 +894,7 @@ This workflow is triggered by the following\...
 
 ### Inputs
 
-This workflow has the following inputs\...
+This workflow has the following inputs...
 
 -   `versionFileJSON` - String - The file containing all the versions
     (example below)
@@ -943,7 +943,7 @@ This workflow creates a GitHub Release with the following configuration.
 
 ### Variables and Secrets
 
-The workflow needs access to the following variables and secrets\...
+The workflow needs access to the following variables and secrets...
 
 -   Repository Level [^13]
 
@@ -960,7 +960,7 @@ The workflow needs access to the following variables and secrets\...
 
 ### Conventions
 
-This workflow will follow the following conventions\...
+This workflow will follow the following conventions...
 
 -   Release Creation
 
