@@ -1,0 +1,812 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{eso-pic}
+\usepackage{authblk}
+\usepackage{bera}
+
+% Page layout
+\geometry{
+  a4paper,
+  total={170mm,257mm},
+  left=20mm,
+  top=20mm,
+}
+
+% Headers and footers
+\pagestyle{fancy}
+% \fancyhf{}
+\rhead{\leftmark}
+\lfoot{\textcolor{gray}{Last updated: \today}}
+\cfoot{\thepage}
+
+% YAML listing style
+\lstdefinestyle{customyaml}{
+  language=Python,
+  morekeywords={true,false,nil},
+  morestring=[b]",
+  morestring=[d]',
+  morecomment=[l]{\#},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{darkgray},
+  keywordstyle=\color{blue},
+  stringstyle=\color{red},
+  basicstyle=\ttfamily\small,
+  breaklines=true
+}
+
+\colorlet{punct}{red!60!black}
+\definecolor{background}{HTML}{EEEEEE}
+\definecolor{delim}{RGB}{20,105,176}
+
+% JSON listing style
+\lstdefinelanguage{json}{
+    basicstyle=\normalfont\ttfamily,
+    numbers=left,
+    numberstyle=\scriptsize,
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=lines,
+    backgroundcolor=\color{background},
+    literate=
+     *{:}{{{\color{punct}{:}}}}{1}
+      {,}{{{\color{punct}{,}}}}{1}
+      {\{}{{{\color{delim}{\{}}}}{1}
+      {\}}{{{\color{delim}{\}}}}}{1}
+      {[}{{{\color{delim}{[}}}}{1}
+      {]}{{{\color{delim}{]}}}}{1},
+}
+
+\AddToShipoutPictureBG*{ % Watermark
+  \AtPageUpperLeft{
+    \raisebox{-\height}{
+      \includegraphics[width=4cm]{watermark.png}
+    }
+  }
+}
+
+\newcommand{\creationandupdate}[2]{%
+  \date{Created: #1 \hspace{1cm} Last Updated: #2}%
+}
+
+\title{Open Horizon GitHub Actions Documentation}
+\author[1]{Blake Pearson}
+\author[2]{Ben Courliss}
+\affil[1]{IBM DevOps Intern, \href{mailto:Blake.Pearson@ibm.com}{Blake.Pearson@ibm.com}}
+\affil[2]{IBM DevOps Engineer, \href{mailto:bencourliss@ibm.com}{bencourliss@ibm.com}}
+\creationandupdate{August 3, 2023}{\today}
+
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction} % Manually add to TOC
+Within this documentation, you'll find a thorough guide to the CI/CD GitHub Actions workflows employed across the Open Horizon repositories. It provides a clear outline of the automated processes that ensure each component of Open Horizon functions seamlessly. As you navigate, this reference will offer insights into the mechanics of our integration and deployment routines, streamlining collaboration and comprehension.
+
+\newpage
+
+\section{Repository: Anax}
+The Anax repository, an integral component of Open Horizon, hosts three vital workflows. These include our continuous integration workflows: E2E-test.yml, facilitating comprehensive end-to-end testing, and build-push.yml, responsible for consistent artifact build-and-push operations. Moreover, our release management is orchestrated through release.yml, ensuring that our releases are both consistent and efficient with no manual interventions. 
+
+\subsection{Workflow: build-push.yml}
+
+\subsubsection{Overview}
+This workflow is triggered upon a successful merge, subsequently checking out the Anax repository and generating all supported artifacts. These artifacts are then pushed to the designated repositories: Open Horizon's Dockerhub registry and GitHub's container registry. These artifacts are later utilized in the release process, ensuring a seamless transition from development to production without manual intervention.
+
+\subsubsection{Triggers}
+This workflow is triggered by the following...
+\begin{itemize}
+    \item Push or Merge to the following branches of Anax
+    \begin{itemize}
+        \item\verb|master|
+        \item\verb|v2.30|
+        \item\verb|v2.29|
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Variables and Secrets}
+The workflow needs access to the following variables and secrets...
+\begin{itemize}
+    \item Repository Level \footnote{To set these variables, follow this path: Repository $\rightarrow$ Settings $\rightarrow$ Secrets and Variables $\rightarrow$ Actions.}
+    \begin{itemize}
+        \item Variables
+        \begin{itemize}
+            \item\verb|DOCKERHUB_REPO| - The Dockerhub Registry where the images will be pushed to.
+            \item\verb|RUN_NUMBER_OFFSET| - This number will be added to the action build number to achieve correct versioning.
+        \end{itemize}
+        \item Secrets
+        \begin{itemize}
+            \item\verb|DOCKER_TOKEN| - Token with access to push to the \verb|DOCKERHUB_REPO| registry
+            \item\verb|DOCKER_USER| - Username associated with \verb|DOCKER_TOKEN|
+            \item\verb|MACPKG_HORIZON_CLI_CRT| - The certificate file used to sign our MacOS packages
+            \item\verb|MACPKG_HORIZON_CLI_P12_BASE64_ENC| - The p12 binary used to sign our MacOS packages encoded into \verb|BASE64|
+            \item\verb|MACPKG_HORIZON_CLI_P12_PASSWORD| - The password to the p12 binary provided in the \verb|MACPKG_HORIZON_CLI_P12_BASE64_ENC| secret
+            \item\verb|MACPKG_KEYCHAIN_PASSWORD| - Value is irrelevant, used to protect our private key on the hosted runner.
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Conventions}
+This workflow will follow the following conventions...
+\begin{itemize}
+    \item Naming Conventions
+    \begin{itemize}
+        \item Docker Images
+        \begin{itemize}
+            \item Agbot: \verb|<architecture>_agbot|
+            \item Anax: \verb|<architecture>_anax|
+            \item K8s: \verb|<architecture>_anax_k8s|
+            \item K8s Cronjob: \verb|<architecture>_auto-upgrade-cronjob_k8s|
+            \item Cloud Sync Service: \verb|<architecture>_cloud-sync-service|
+            \item Edge Sync Service: \verb|<architecture>_edge-sync-service|
+            \item Debian Packages: \verb|<architecture>_anax_debian|
+            \item RPM Packages: \verb|<architecture>_anax_rpm|
+            \item MacOS Packages: \verb|<architecture>_anax_macpkg|
+        \end{itemize}
+        \item GitHub Actions Artifacts
+        \begin{itemize}
+            \item Anax Agent Files: \verb|anax-agent-files-v<VERSION>|
+            \item Docker Images: \verb|anax-<platform>-<DOCKER IMAGE NAME>-image-v<VERSION>|
+            \item Debian Packages: \verb|anax-<platform>-<architecture>-deb-package-v<VERSION>|
+            \item RPM Packages: \verb|anax-<platform>-<architecture>-rpm-package-v<VERSION>|
+            \item MacOS Packages: \verb|anax-<platform>-<architecture>-mac-package-v<VERSION>|
+        \end{itemize}
+    \end{itemize}
+    \item{Docker Image Tags}
+    \begin{itemize}
+        \item Push \verb|testing| if \verb|master| branch triggered the workflow
+        \item Push \verb|testing_<branch>| if non-master branch triggered the workflow
+    \end{itemize}
+    \item Creating the Docker Images that hold the Deb/RPM/Mac Packages
+    \begin{itemize}
+        \item Rule 1: Dockerfile should be \verb|FROM alpine:latest|
+        \item Rule 2: Dockerfile should have \verb|ADD ./<debs/rpms/macpkg>.tar.gz|
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Produced Artifacts}
+This workflow produces the following artifacts...
+\begin{itemize}
+    \item Docker Images
+    \begin{itemize}
+        \item\verb|amd64_agbot|
+        \item\verb|amd64_anax|
+        \item\verb|amd64_anax_k8s|
+        \item\verb|amd64_auto-upgrade-cronjob_k8s|
+        \item\verb|amd64_cloud-sync-service|
+        \item\verb|amd64_edge-sync-service|
+        \item\verb|amd64_anax_debian|
+        \item\verb|amd64_anax_rpm|
+        \item\verb|amd64_anax_macpkg|
+        \\
+        \item\verb|arm64_anax|
+        \item\verb|arm64_anax_k8s|
+        \item\verb|arm64_auto-upgrade-cronjob_k8s|
+        \item\verb|arm64_edge-sync-service|
+        \item\verb|arm64_anax_debian|
+        \item\verb|arm64_anax_macpkg|
+        \\
+        \item\verb|ppc64el_anax|
+        \item\verb|ppc64el_anax_k8s|
+        \item\verb|ppc64el_auto-upgrade-cronjob_k8s|
+        \item\verb|ppc64el_edge-sync-service|
+        \item\verb|ppc64el_anax_debian|
+        \item\verb|ppc64el_anax_rpm|
+        \\
+        \item\verb|armhf_anax_debian|
+        \\
+        \item\verb|s390x_anax|
+        \item\verb|s390x_anax_k8s|
+        \item\verb|s390x_auto-upgrade-cronjob_k8s|
+        \item\verb|s390x_edge-sync-service|
+        \item\verb|s390x_anax_debian|
+        \item\verb|s390x_anax_rpm|
+    \end{itemize}
+    \item GitHub Actions Artifacts (expires 90 days after upload)
+    \begin{itemize}
+        \item\verb|anax-agent-files-v<VERSION>|
+        \\
+        \item\verb|anax-linux-amd64_agbot-image-v<VERSION>|
+        \item\verb|anax-linux-amd64_anax-image-v<VERSION>|
+        \item\verb|anax-linux-amd64_anax_k8s-image-v<VERSION>|
+        \item\verb|anax-linux-amd64_auto-upgrade-cronjob_k8s-image-v<VERSION>|
+        \item\verb|anax-linux-amd64_cloud-sync-service-v<VERSION>|
+        \item\verb|anax-linux-amd64_edge-sync-service-v<VERSION>|
+        \item\verb|anax-linux-amd64-deb-package-v<VERSION>|
+        \item\verb|anax-linux-amd64-rpm-package-v<VERSION>|
+        \item\verb|anax-mac-amd64-mac-package-v<VERSION>|
+        \\
+        \item\verb|anax-linux-arm64_anax-image-v<VERSION>|
+        \item\verb|anax-linux-arm64_anax_k8s-image-v<VERSION>|
+        \item\verb|anax-linux-arm64_auto-upgrade-cronjob_k8s-image-v<VERSION>|
+        \item\verb|anax-linux-arm64_edge-sync-service-v<VERSION>|
+        \item\verb|anax-linux-arm64-deb-package-v<VERSION>|
+        \\
+        \item\verb|anax-linux-armhf-deb-package-v<VERSION>|
+        \\
+        \item\verb|anax-linux-ppc64el_anax-image-v<VERSION>|
+        \item\verb|anax-linux-ppc64el_anax_k8s-image-v<VERSION>|
+        \item\verb|anax-linux-ppc64el_auto-upgrade-cronjob_k8s-image-v<VERSION>|
+        \item\verb|anax-linux-ppc64el_edge-sync-service-v<VERSION>|
+        \item\verb|anax-linux-ppc64el-deb-package-v<VERSION>|
+        \item\verb|anax-linux-ppc64el-rpm-package-v<VERSION>|
+        \\
+        \item\verb|anax-linux-s390x_anax-image-v<VERSION>|
+        \item\verb|anax-linux-s390x_anax_k8s-image-v<VERSION>|
+        \item\verb|anax-linux-s390x_auto-upgrade-cronjob_k8s-image-v<VERSION>|
+        \item\verb|anax-linux-s390x_edge-sync-service-v<VERSION>|
+        \item\verb|anax-linux-s390x-deb-package-v<VERSION>|
+        \item\verb|anax-linux-s390x-rpm-package-v<VERSION>|
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Dependencies}
+This workflow has the following dependencies...
+\begin{itemize}
+    \item Internal Dependencies \footnote{Typically found in: .github/scripts}
+    \begin{itemize}
+        \item\verb|configure_versions_script.sh|
+        \item\verb|docker_build_script.sh|
+        \item\verb|docker_push_script.sh|
+        \item\verb|docker_save_script.sh|
+        \item\verb|package_push.sh|
+    \end{itemize}
+    \item External Dependencies
+    \begin{itemize}
+        \item External Actions
+        \begin{itemize}
+            \item\verb|actions/checkout@v3|\\Author: GitHub\\Link: \href{https://github.com/actions/checkout}{https://github.com/actions/checkout}\\Use: To checkout our repository into the hosted runner.
+            \item\verb|actions/upload-artifact@v3|\\Author: GitHub\\Link: \href{https://github.com/actions/upload-artifact}{https://github.com/actions/upload-artifact}\\Use: To upload artifacts to GitHub actions artifacts
+            \item\verb|docker/setup-qemu-action@v2|\\Author: Docker\\Link: \href{https://github.com/docker/setup-qemu-action}{https://github.com/docker/setup-qemu-action}\\Use: Setup QEMU for Docker image building cross architecture.
+            \item\verb|docker/setup-buildx-action@v2|\\Author: Docker\\Link: \href{https://github.com/docker/setup-buildx-action}{https://github.com/docker/setup-buildx-action}\\Use: Setup BuildX for Docker image building cross architecture.
+            \item\verb|docker/login-action@v2|\\Author: Docker\\Link: \href{https://github.com/docker/login-action}{https://github.com/docker/login-action}\\Use: Login to Dockerhub and GitHub Container Registry for image push. (Can be replaced with a run docker login command)
+            \item\verb|actions/setup-go@v3|\\Author: GitHub\\Link: \href{https://github.com/actions/setup-go}{https://github.com/actions/setup-go}\\Use: Set up GoLang within our runner environment
+            \item\verb|uraimo/run-on-arch-action@v2|\\Author: Uraimo and Contributors\\Link: \href{https://github.com/uraimo/run-on-arch-action}{https://github.com/uraimo/run-on-arch-action}\\Use: Set up Docker containers to execute build commands on specified architectures allowing us to build anax packages on other architectures when both GitHub doesn't support that architecture as a runner and the packaging tool doesn't support cross-architecture.
+            \item\verb|actions/download-artifact@v3|\\Author: GitHub\\Link: \href{https://github.com/actions/upload-artifact}{https://github.com/actions/upload-artifact}\\Use: Get artifacts that were uploaded previously.
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Adding Architectures}
+Adding architectures to be built should be as simple as adding them to the build matrix and conditional statements for each step depending on what artifacts you want to be built. The scripts listed in internal dependencies will also need to be updated to inclde the new architecture. If you want a RPM package you'll likely create a new step using the run-on-arch action. 
+
+\subsubsection{Possible Future Issues}
+\begin{itemize}
+
+    \item Install Latest Docker Version\\\verb|- name: Install Latest Docker Version|
+    \begin{itemize}
+        \item Previous bugs have popped up from this, seems to be when a major change is made to the latest Docker version or the GitHub hosted runners change pre-installed software relating to docker/moby.
+    \end{itemize}
+
+    \item Configure MacOS Certificates\\\verb|- name: Configure Certificates|
+    \begin{itemize}
+        \item OpenSSL and the way MacOS handles certificates/signing varies largely between versions of MacOS. This step uses a work around to mark the certificate as trusted with no password/cli prompts. It does so by creating a new keychain and unlocking said keychain so adding a trusted cert doesn't prompt for a password.
+    \end{itemize}
+\end{itemize}
+
+
+\newpage
+\subsection{Workflow: release.yml}
+
+\subsubsection{Overview}
+Typically this workflow is triggered by the overarching Open Horizon release manager and should only be manually triggered in very specific use cases. This workflow activates in response to a workflow dispatch initiated via the Actions interface or GitHub API. Utilizing specified image and package version inputs, it retrieves the associated artifacts from a previous build-push.yml workflow run. Subsequently, it tags the Dockerhub images with both the 'latest' and the specified version tags. Finally, a GitHub release page is generated.
+
+\subsubsection{Triggers}
+This workflow is triggered by the following...
+\begin{itemize}
+    \item Workflow Dispatch
+    \begin{itemize}
+        \item\verb|via Actions Interface| \footnote{\href{https://github.com/open-horizon/anax/actions/workflows/release.yml}{https://github.com/open-horizon/anax/actions/workflows/release.yml}}
+        \item\verb|via GitHub Rest API| \footnote{\href{https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28\#create-a-workflow-dispatch-event}{https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28\#create-a-workflow-dispatch-event}}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Inputs}
+This workflow has the following inputs...
+\begin{itemize}
+    \item\verb|AGBOT_VERSION| - String - The version of the Agbot image and packages.
+    \item\verb|ANAX_VERSION| - String - The version of the Anax images.
+    \item\verb|ANAX_K8S_VERSION| - String - The version of the Anax K8s images.
+    \item\verb|ANAX_CSS_VERSION| - String - The version of the Cloud Sync Service images.
+    \item\verb|ANAX_ESS_VERSION| - String - The version of the Edge Sync Service images.
+    \item\verb|IS_LATEST| - Boolean - Decides if the 'latest' tag should be pushed to Dockerhub
+\end{itemize}
+
+\subsubsection{Outputs}
+This workflow creates a GitHub Release with the following configuration.
+\begin{itemize}
+    \item Title: \verb|v<version> Packages|
+    \item Tag: \verb|v<version>|
+    \item Assets:
+    \begin{itemize}
+        \item\verb|agent-install.sh|
+        \item\verb|horizon-agent-edge-cluster-files.tar.gz|
+        \item\verb|horizon-agent-linux-deb-amd64.tar.gz|
+        \item\verb|horizon-agent-linux-deb-arm64.tar.gz|
+        \item\verb|horizon-agent-linux-deb-armhf.tar.gz|
+        \item\verb|horizon-agent-linux-deb-ppc64el.tar.gz|
+        \item\verb|horizon-agent-linux-deb-s390x.tar.gz|
+        \item\verb|horizon-agent-linux-rpm-ppc64le.tar.gz|
+        \item\verb|horizon-agent-linux-rpm-s390x.tar.gz|
+        \item\verb|horizon-agent-linux-rpm-x86_64.tar.gz|
+        \item\verb|horizon-agent-macos-pkg-arm64.tar.gz|
+        \item\verb|horizon-agent-macos-pkg-x86_64.tar.gz|
+        \item\verb|Source code|
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Variables and Secrets}
+The workflow needs access to the following variables and secrets...
+\begin{itemize}
+    \item Repository Level \footnote{To set these variables, follow this path: Repository $\rightarrow$ Settings $\rightarrow$ Secrets and Variables $\rightarrow$ Actions.}
+    \begin{itemize}
+        \item Variables
+        \begin{itemize}
+            \item\verb|DOCKERHUB_REPO| - The Dockerhub Registry where the images will be pushed to.
+        \end{itemize}
+        \item Secrets
+        \begin{itemize}
+            \item\verb|DOCKER_TOKEN| - Token with access to push to the \verb|DOCKERHUB_REPO| registry
+            \item\verb|DOCKER_USER| - Username associated with \verb|DOCKER_TOKEN|
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Conventions}
+This workflow will follow the following conventions...
+\begin{itemize}
+    \item Naming Conventions
+    \begin{itemize}
+        \item Docker Images
+        \begin{itemize}
+            \item Agbot: \verb|<architecture>_agbot|
+            \item Anax: \verb|<architecture>_anax|
+            \item K8s: \verb|<architecture>_anax_k8s|
+            \item K8s Cronjob: \verb|<architecture>_auto-upgrade-cronjob_k8s|
+            \item Cloud Sync Service: \verb|<architecture>_cloud-sync-service|
+            \item Edge Sync Service: \verb|<architecture>_edge-sync-service|
+            \item Debian Packages: \verb|<architecture>_anax_debian|
+            \item RPM Packages: \verb|<architecture>_anax_rpm|
+            \item MacOS Packages: \verb|<architecture>_anax_macpkg|
+        \end{itemize}
+        \item GitHub Actions Artifacts
+        \begin{itemize}
+            \item Anax Agent Files: \verb|anax-agent-files-v<VERSION>|
+            \item Docker Images: \verb|anax-<platform>-<DOCKER IMAGE NAME>-image-v<VERSION>|
+            \item Debian Packages: \verb|anax-<platform>-<architecture>-deb-package-v<VERSION>|
+            \item RPM Packages: \verb|anax-<platform>-<architecture>-rpm-package-v<VERSION>|
+            \item MacOS Packages: \verb|anax-<platform>-<architecture>-mac-package-v<VERSION>|
+        \end{itemize}
+    \end{itemize}
+    \item Release Creation
+    \begin{itemize}
+        \item Rule: Release commit hash will be taken from the commit hash found in \verb|amd64_agbot| image, which is the commit that triggered the creation of the agbot image.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Dependencies}
+This workflow has no notable dependencies.
+
+
+
+
+
+\newpage
+\section{Repository: Exchange API}
+
+\subsection{Workflow: build-push.yml}
+
+\subsubsection{Overview}
+This workflow is triggered upon a successful merge, subsequently checking out the Exchange API repository and generating the amd64 docker image. This artifact is then pushed to the designated repositories: Open Horizon's Dockerhub registry and GitHub's container registry. 
+
+\subsubsection{Triggers}
+This workflow is triggered by the following...
+\begin{itemize}
+    \item Push or Merge to the following branches of Exchange API...
+    \begin{itemize}
+        \item\verb|master|
+        \item\verb|v2.87|
+        \item\verb|v2.110|
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Variables and Secrets}
+The workflow needs access to the following variables and secrets...
+\begin{itemize}
+    \item Repository Level \footnote{To set these variables, follow this path: Repository $\rightarrow$ Settings $\rightarrow$ Secrets and Variables $\rightarrow$ Actions.}
+    \begin{itemize}
+        \item Variables
+        \begin{itemize}
+            \item\verb|DOCKERHUB_REPO| - The Dockerhub Registry where the images will be pushed to.
+        \end{itemize}
+        \item Secrets
+        \begin{itemize}
+            \item\verb|DOCKER_TOKEN| - Token with access to push to the \verb|DOCKERHUB_REPO| registry
+            \item\verb|DOCKER_USER| - Username associated with \verb|DOCKER_TOKEN|
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Conventions}
+This workflow will follow the following conventions...
+\begin{itemize}
+    \item Naming Conventions
+    \begin{itemize}
+        \item Docker Images
+        \begin{itemize}
+            \item Exchange Image: \verb|amd64_exchange-api|
+        \end{itemize}
+    \end{itemize}
+    \item{Docker Image Tags}
+    \begin{itemize}
+        \item Push \verb|testing| if \verb|master| branch triggered the workflow
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Produced Artifacts}
+This workflow produces the following artifacts...
+\begin{itemize}
+    \item Docker Images
+    \begin{itemize}
+        \item\verb|amd64_exchange-api|
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Dependencies}
+This workflow has the following dependencies...
+\begin{itemize}
+    \item External Dependencies
+    \begin{itemize}
+        \item External Actions
+        \begin{itemize}
+            \item\verb|actions/checkout@v3|\\Author: GitHub\\Link: \href{https://github.com/actions/checkout}{https://github.com/actions/checkout}\\Use: To checkout our repository into the hosted runner.
+            \item\verb|docker/login-action@v2|\\Author: Docker\\Link: \href{https://github.com/docker/login-action}{https://github.com/docker/login-action}\\Use: Login to Dockerhub and GitHub Container Registry for image push. (Can be replaced with a run docker login command)
+            \item\verb|coursier/setup-action@v1|\\Author: Coursier\\Link: \href{https://github.com/coursier/setup-action}{https://github.com/coursier/setup-action}\\Use: A GitHub Action to install Coursier and use it to install Java and Scala CLI tools.
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Possible Future Issues}
+\begin{itemize}
+    \item Install Latest Docker Version\\\verb|- name: Install Latest Docker Version|
+    \begin{itemize}
+        \item Previous bugs have popped up from this, seems to be when a major change is made to the latest Docker version or the GitHub hosted runners change pre-installed software relating to docker/moby.
+    \end{itemize}
+\end{itemize}
+
+
+\newpage
+
+\newpage
+\section{Repository: FDO Support}
+
+\subsection{Workflow: build-push.yml}
+
+\subsubsection{Overview}
+This workflow is triggered upon a successful merge, subsequently checking out the FDO-Support repository and generating all supported artifacts. These artifacts are then pushed to the designated repositories: Open Horizon's Dockerhub registry and GitHub's container registry.
+
+\subsubsection{Triggers}
+This workflow is triggered by the following...
+\begin{itemize}
+    \item Push or Merge to the following branches of FDO-Support
+    \begin{itemize}
+        \item\verb|main|
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Variables and Secrets}
+The workflow needs access to the following variables and secrets...
+\begin{itemize}
+    \item Repository Level \footnote{To set these variables, follow this path: Repository $\rightarrow$ Settings $\rightarrow$ Secrets and Variables $\rightarrow$ Actions.}
+    \begin{itemize}
+        \item Variables
+        \begin{itemize}
+            \item\verb|DOCKERHUB_REPO| - The Dockerhub Registry where the images will be pushed to.
+            \item\verb|RUN_NUMBER_OFFSET| - This number will be added to the action build number to achieve correct versioning.
+        \end{itemize}
+        \item Secrets
+        \begin{itemize}
+            \item\verb|DOCKER_TOKEN| - Token with access to push to the \verb|DOCKERHUB_REPO| registry
+            \item\verb|DOCKER_USER| - Username associated with \verb|DOCKER_TOKEN|
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Conventions}
+This workflow will follow the following conventions...
+\begin{itemize}
+    \item Naming Conventions
+    \begin{itemize}
+        \item Docker Images
+        \begin{itemize}
+            \item FDO Image: \verb|fdo-owner-services|
+        \end{itemize}
+    \end{itemize}
+    \item{Docker Image Tags}
+    \begin{itemize}
+        \item Push \verb|testing| if \verb|master| branch triggered the workflow
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Produced Artifacts}
+This workflow produces the following artifacts...
+\begin{itemize}
+    \item Docker Images
+    \begin{itemize}
+        \item\verb|fdo-owner-services|
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Dependencies}
+This workflow has the following dependencies...
+\begin{itemize}
+    \item External Dependencies
+    \begin{itemize}
+        \item External Actions
+        \begin{itemize}
+            \item\verb|actions/checkout@v3|\\Author: GitHub\\Link: \href{https://github.com/actions/checkout}{https://github.com/actions/checkout}\\Use: To checkout our repository into the hosted runner.
+            \item\verb|docker/login-action@v2|\\Author: Docker\\Link: \href{https://github.com/docker/login-action}{https://github.com/docker/login-action}\\Use: Login to Dockerhub and GitHub Container Registry for image push. (Can be replaced with a run docker login command)
+            \item\verb|actions/setup-go@v2|\\Author: GitHub\\Link: \href{https://github.com/actions/setup-go}{https://github.com/actions/setup-go}\\Use: Set up GoLang within our runner environment
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Possible Future Issues}
+\begin{itemize}
+    \item Install Latest Docker Version\\\verb|- name: Install Latest Docker Version|
+    \begin{itemize}
+        \item Previous bugs have popped up from this, seems to be when a major change is made to the latest Docker version or the GitHub hosted runners change pre-installed software relating to docker/moby.
+    \end{itemize}
+\end{itemize}
+
+
+
+\newpage
+\section{Repository: Vault Exchange Auth}
+
+\subsection{Workflow: build-push.yml}
+
+\subsubsection{Overview}
+This workflow is triggered upon a successful merge, subsequently checking out the vault-exchange-auth repository and generating all supported artifacts. These artifacts are then pushed to the designated repositories: Open Horizon's Dockerhub registry and GitHub's container registry.
+
+\subsubsection{Triggers}
+This workflow is triggered by the following...
+\begin{itemize}
+    \item Push or Merge to the following branches of Vault
+    \begin{itemize}
+        \item\verb|master|
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Variables and Secrets}
+The workflow needs access to the following variables and secrets...
+\begin{itemize}
+    \item Repository Level \footnote{To set these variables, follow this path: Repository $\rightarrow$ Settings $\rightarrow$ Secrets and Variables $\rightarrow$ Actions.}
+    \begin{itemize}
+        \item Variables
+        \begin{itemize}
+            \item\verb|DOCKERHUB_REPO| - The Dockerhub Registry where the images will be pushed to.
+            \item\verb|RUN_NUMBER_OFFSET| - This number will be added to the action build number to achieve correct versioning.
+        \end{itemize}
+        \item Secrets
+        \begin{itemize}
+            \item\verb|DOCKER_TOKEN| - Token with access to push to the \verb|DOCKERHUB_REPO| registry
+            \item\verb|DOCKER_USER| - Username associated with \verb|DOCKER_TOKEN|
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Conventions}
+This workflow will follow the following conventions...
+\begin{itemize}
+    \item Naming Conventions
+    \begin{itemize}
+        \item Docker Images
+        \begin{itemize}
+            \item Vault Image: \verb|amd64_vault|
+        \end{itemize}
+    \end{itemize}
+    \item{Docker Image Tags}
+    \begin{itemize}
+        \item Push \verb|testing| if \verb|master| branch triggered the workflow
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Produced Artifacts}
+This workflow produces the following artifacts...
+\begin{itemize}
+    \item Docker Images
+    \begin{itemize}
+        \item\verb|amd64_vault|
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Dependencies}
+This workflow has the following dependencies...
+\begin{itemize}
+    \item External Dependencies
+    \begin{itemize}
+        \item External Actions
+        \begin{itemize}
+            \item\verb|actions/checkout@v3|\\Author: GitHub\\Link: \href{https://github.com/actions/checkout}{https://github.com/actions/checkout}\\Use: To checkout our repository into the hosted runner.
+            \item\verb|docker/login-action@v2|\\Author: Docker\\Link: \href{https://github.com/docker/login-action}{https://github.com/docker/login-action}\\Use: Login to Dockerhub and GitHub Container Registry for image push. (Can be replaced with a run docker login command)
+            \item\verb|actions/setup-go@v2|\\Author: GitHub\\Link: \href{https://github.com/actions/setup-go}{https://github.com/actions/setup-go}\\Use: Set up GoLang within our runner environment
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Possible Future Issues}
+\begin{itemize}
+    \item Install Latest Docker Version\\\verb|- name: Install Latest Docker Version|
+    \begin{itemize}
+        \item Previous bugs have popped up from this, seems to be when a major change is made to the latest Docker version or the GitHub hosted runners change pre-installed software relating to docker/moby.
+    \end{itemize}
+\end{itemize}
+
+
+\newpage
+\section{Repository: Examples}
+
+\subsection{Workflow: release.yml}
+
+\subsubsection{Overview}
+Typically this workflow is triggered by the overarching Open Horizon release manager and should only be manually triggered in very specific use cases. This workflow activates in response to a workflow dispatch initiated via the Actions interface or GitHub API. Utilizing the version JSON inputted, it creates the tested versions file and subsequently generates the examples release with said file.
+
+\subsubsection{Triggers}
+This workflow is triggered by the following...
+\begin{itemize}
+    \item Workflow Dispatch
+    \begin{itemize}
+        \item\verb|via Actions Interface| \footnote{\href{https://github.com/open-horizon/examples/actions/workflows/release.yml}{https://github.com/open-horizon/examples/actions/workflows/release.yml}}
+        \item\verb|via GitHub Rest API| \footnote{\href{https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28\#create-a-workflow-dispatch-event}{https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28\#create-a-workflow-dispatch-event}}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Inputs}
+This workflow has the following inputs...
+\begin{itemize}
+    \item\verb|versionFileJSON| - String - The file containing all the versions (example below)
+    \begin{lstlisting}[language=json]
+{   
+    "amd64_agbot": "2.31.0-1498",
+    "amd64_anax": "2.31.0-1498",
+    "amd64_anax_k8s": "2.31.0-1498",
+    "amd64_cloud-sync-service": "1.10.1-1498",
+    "amd64_edge-sync-service": "1.10.1-1498",
+    "amd64_exchange-api": "2.117.0-1163",
+    "amd64_vault": "1.1.2-806",
+    "fdo-owner-services": "2.31.0-1498",
+    "sdo-owner-services": "1.11.16-1083"
+}
+    \end{lstlisting}
+
+\end{itemize}
+
+\subsubsection{Outputs}
+This workflow creates a GitHub Release with the following configuration.
+\begin{itemize}
+    \item Title: \verb|v<version>|
+    \item Tag: \verb|v<version>|
+    \item Assets:
+    \begin{itemize}
+        \item\verb|openhorizon-tested-versions.txt|
+        \item\verb|Source code|
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Variables and Secrets}
+The workflow needs access to no variables or secrets.
+
+\subsubsection{Conventions}
+This workflow will follow the following conventions...
+\begin{itemize}
+    \item Release Creation
+    \begin{itemize}
+        \item Rule: Release commit hash will be taken from the latest commit hash found in the branch that is related to the version. If said branch doesn't exist for the version it is likely that it is the latest version and commit hash will be taken from master branch.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Dependencies}
+This workflow has no notable dependencies.
+
+\newpage
+\section{Repository: Open Horizon Release}
+Open Horizon Releases is a central repository aimed at managing and coordinating the release process for various Open Horizon components.
+
+\subsection{Workflow: release.yml}
+
+\subsubsection{Overview}
+In anticipation of an Open Horizon component release, this workflow is typically initiated manually. This workflow activates in response to a workflow dispatch initiated via the Actions interface or GitHub API. Utilizing the version JSON inputted, it triggers the release.yml workflows of both Anax and Exchange repositories. Upon successful execution, it generates its release, consolidating version details and links to the component releases within their specific repositories."
+
+\subsubsection{Triggers}
+This workflow is triggered by the following...
+\begin{itemize}
+    \item Workflow Dispatch
+    \begin{itemize}
+        \item\verb|via Actions Interface| \footnote{\href{https://github.com/open-horizon/open-horizon-release/actions/workflows/release.yml}{https://github.com/open-horizon/open-horizon-release/actions/workflows/release.yml}}
+        \item\verb|via GitHub Rest API| \footnote{\href{https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28\#create-a-workflow-dispatch-event}{https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28\#create-a-workflow-dispatch-event}}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Inputs}
+This workflow has the following inputs...
+\begin{itemize}
+    \item\verb|versionFileJSON| - String - The file containing all the versions (example below)
+    \begin{lstlisting}[language=json]
+{   
+    "amd64_agbot": "2.31.0-1498",
+    "amd64_anax": "2.31.0-1498",
+    "amd64_anax_k8s": "2.31.0-1498",
+    "amd64_cloud-sync-service": "1.10.1-1498",
+    "amd64_edge-sync-service": "1.10.1-1498",
+    "amd64_exchange-api": "2.117.0-1163",
+    "amd64_vault": "1.1.2-806",
+    "fdo-owner-services": "2.31.0-1498",
+    "sdo-owner-services": "1.11.16-1083"
+}
+    \end{lstlisting}
+    \item\verb|INCREMENT_MAJOR_VERSION| - Boolean - Decides if the major (X.0.0) version should be incremented.
+    \item\verb|INCREMENT_MINOR_VERSION| - Boolean - Decides if the minor (0.X.0) version should be incremented.
+    \item\verb|INCREMENT_PATCH_VERSION| - Boolean - Decides if the patch (0.0.X) version should be incremented.
+    \item\verb|IS_LATEST| - Boolean - Decides if the latest tags get pushed to Dockerhub for releases such as Anax.
+
+\end{itemize}
+
+\subsubsection{Outputs}
+This workflow creates a GitHub Release with the following configuration.
+\begin{itemize}
+    \item Title: \verb|Open Horizon Release v<version>|
+    \item Tag: \verb|v<version>|
+    \item Release Notes: (contains links to Anax and Examples releases)
+    \item Assets:
+    \begin{itemize}
+        \item\verb|Released_Versions.json|
+        \item\verb|Source code|
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Variables and Secrets}
+The workflow needs access to the following variables and secrets...
+\begin{itemize}
+    \item Repository Level \footnote{To set these variables, follow this path: Repository $\rightarrow$ Settings $\rightarrow$ Secrets and Variables $\rightarrow$ Actions.}
+    \begin{itemize}
+        \item Variables
+        \begin{itemize}
+            \item\verb|OPENHORIZON_RELEASE_VERSION| - The current version of Open Horizon.
+        \end{itemize}
+        \item Secrets
+        \begin{itemize}
+            \item\verb|OPENHORIZON_RELEASE_MANAGER_TOKEN| - GitHub token that has organization level 'repo' scope. Needs at minimum 'repo' for Open Horizon Release, Anax, and Examples.
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+
+\subsubsection{Conventions}
+This workflow will follow the following conventions...
+\begin{itemize}
+    \item Release Creation
+    \begin{itemize}
+        \item Rule: Release commit hash is not specified and will be latest in main branch.
+        \item Rule: If increment version is set, the version used in the Open Horizon Release will always be the variable \verb|OPENHORIZON_RELEASE_VERSION| post-increment. If you want to use the version that the variable is currently set to, do not increment.
+    \end{itemize}
+    \item Version Increment: When incrementing the version, any less significant versions will be set to 0. For example incrementing the minor version of 1.3.5 results in 1.4.0 as the patch version is less significant.
+\end{itemize}
+
+\subsubsection{Dependencies}
+This workflow has no notable dependencies.
+
+\end{document}
